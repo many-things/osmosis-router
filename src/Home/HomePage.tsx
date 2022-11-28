@@ -2,7 +2,9 @@ import { getOsmosisRoutes } from '@/osmosis';
 import { OSMOSIS_CHAIN_CONFIG } from '@/osmosis/chain';
 import { getOsmosisQuery } from '@many-things/cosmos-query';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
+import { estimateMultihopSwapExactAmountIn } from '@osmosis-labs/math';
 import React, { useEffect } from 'react';
+import { Dec, DecUtils } from '@keplr-wallet/unit'
 import styled from 'styled-components';
 
 const HomePage = () => {
@@ -21,6 +23,7 @@ useEffect(() => {
     const pools = (await Promise.all(promises)).flat()
 
     console.log(pools.length)
+    const amount = '1'
     const routes = await getOsmosisRoutes({
       tokenIn: {
         currency: {
@@ -28,7 +31,7 @@ useEffect(() => {
           coinMinimalDenom: "uosmo",
           coinDecimals: 6,
         },
-        amount: '1',
+        amount,
       },
       tokenOutCurrency: {
         coinDenom: "USDC",
@@ -38,6 +41,27 @@ useEffect(() => {
       pools
     })
     console.log({routes})
+
+    const result = estimateMultihopSwapExactAmountIn({
+      currency: {
+        coinDenom: "OSMO",
+        coinMinimalDenom: "uosmo",
+        coinDecimals: 6,
+      },
+      amount: new Dec(amount)
+      .mul(
+        DecUtils.getTenExponentNInPrecisionRange(
+          // tokenIn.currency.coinDecimals
+          6
+        )
+      )
+      .truncate()
+      .toString(),
+    }, routes)
+    console.log({ result })
+      console.log(result.tokenOut
+        // .moveDecimalPointRight(tokenOutCurrency.coinDecimals)
+        .moveDecimalPointLeft(6).toString())
   }
 
   fetch()
