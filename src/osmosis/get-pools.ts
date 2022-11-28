@@ -1,10 +1,10 @@
 import { getOsmosisQuery } from '@many-things/cosmos-query';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
-import { OSMOSIS_CHAIN_CONFIG } from './chain';
+import { OSMOSIS_CHAIN_REST } from './chain';
 
 export const getOsmosisPools = async (): Promise<Pool[]> => {
-  const { getPools, getNumPools } = getOsmosisQuery(OSMOSIS_CHAIN_CONFIG.rest);
+  const { getPools, getNumPools } = getOsmosisQuery(OSMOSIS_CHAIN_REST);
   const { num_pools } = (await getNumPools()) as unknown as {
     num_pools: string;
   };
