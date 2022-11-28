@@ -3,12 +3,7 @@ import { Dec, Int } from '@keplr-wallet/unit';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
 import { OSMOSIS_CURRENCIES } from './constants';
-import {
-  CoinPrimitive,
-  SwapPath,
-  getOptimizedRoutePaths,
-  getPoolAsset,
-} from './pools';
+import { CoinPrimitive, getOptimizedRoutePaths, getPoolAsset } from './pools';
 
 export interface Route {
   pool: {
