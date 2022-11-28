@@ -3,23 +3,7 @@ import { Dec, Int } from '@keplr-wallet/unit';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
 import { CoinPrimitive, getOptimizedRoutePaths, getPoolAsset } from './pools';
-
-export interface Route {
-  pool: {
-    inPoolAsset: {
-      coinDecimals: number;
-      coinMinimalDenom: string;
-      amount: Int;
-      weight: Int;
-    };
-    outPoolAsset: {
-      amount: Int;
-      weight: Int;
-    };
-    swapFee: Dec;
-  };
-  tokenOutCurrency: Currency;
-}
+import { Route } from './types';
 
 export const getOsmosisRoutes = async ({
   tokenIn,
@@ -44,9 +28,6 @@ export const getOsmosisRoutes = async ({
   };
 
   const routes = getOptimizedRoutePaths(amount, tokenOutCurrency, pools);
-  // sendSwapExactAmountInMsg
-  // https://github.com/osmosis-labs/osmosis-frontend/blob/fc757c5b6c5cf17846eafd3747246491858e1db7/packages/stores/src/account/index.ts#L578-L696
-
   if (routes.length === 0) {
     throw 'There is no matched pool';
   }
