@@ -1,16 +1,22 @@
 import { Dec, DecUtils } from '@keplr-wallet/unit';
-import { getOsmosisQuery } from '@many-things/cosmos-query';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
-import { estimateMultihopSwapExactAmountIn } from '@osmosis-labs/math';
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
-
-import { getOsmosisRoutes } from '@/osmosis';
-import { OSMOSIS_CHAIN_CONFIG } from '@/osmosis/chain';
 
 const HomePage = () => {
   useEffect(() => {
     const fetch = async () => {
+      const [
+        { getOsmosisQuery },
+        { estimateMultihopSwapExactAmountIn },
+        { OSMOSIS_CHAIN_CONFIG },
+        { getOsmosisRoutes },
+      ] = await Promise.all([
+        import('@many-things/cosmos-query'),
+        import('@osmosis-labs/math'),
+        import('@/osmosis/chain'),
+        import('@/osmosis'),
+      ]);
       const { getPools, getNumPools } = getOsmosisQuery(
         OSMOSIS_CHAIN_CONFIG.rest,
       );
@@ -32,7 +38,6 @@ const HomePage = () => {
       }
       const pools = (await Promise.all(promises)).flat();
 
-      console.log(pools.length);
       const amount = '1';
       const routes = await getOsmosisRoutes({
         tokenIn: {

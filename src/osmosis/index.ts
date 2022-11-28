@@ -2,7 +2,6 @@ import { Currency } from '@keplr-wallet/types';
 import { Dec, Int } from '@keplr-wallet/unit';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
-import { OSMOSIS_CURRENCIES } from './constants';
 import { CoinPrimitive, getOptimizedRoutePaths, getPoolAsset } from './pools';
 
 export interface Route {
@@ -90,6 +89,7 @@ export const getOsmosisRoutes = async ({
       },
     ];
   } else {
+    const { OSMOSIS_CURRENCIES } = await import('./constants');
     const routePath: Route[] = routes[0].pools.map((pool, index) => {
       const outTokenMinimalDenom = routes[0].tokenOutDenoms[index];
       const outTokenCurrency = OSMOSIS_CURRENCIES.find(
