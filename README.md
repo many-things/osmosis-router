@@ -1,1 +1,3 @@
-# osmosis router
+# tinyosmo
+
+> Tiny Osmosis Router
