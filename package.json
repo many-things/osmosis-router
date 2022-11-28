@@ -11,6 +11,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@cosmjs/amino": "^0.29.4",
+    "@cosmjs/launchpad": "^0.27.1",
+    "@keplr-wallet/cosmos": "^0.11.18",
+    "@many-things/cosmos-query": "^0.1.22",
+    "@osmosis-labs/math": "^3.0.0",
+    "@osmosis-labs/pools": "^3.0.0",
+    "@osmosis-labs/stores": "^3.0.0",
+    "long": "^5.2.1",
     "next": "^13.0.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
