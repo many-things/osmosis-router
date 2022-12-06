@@ -53,7 +53,7 @@ getSwapEstimation(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.9
 > 3. Estimate swap using resolved route
 >
 > The following is the current code for `getSwapEstimation`.
-> You can use build your own custom implementation for efficiency, if you're using estimating multiple times(e.g. using already-fetched pools).
+> You can use build your own custom implementation for efficiency, if you're using estimating multiple times(e.g. using pools that are already fetched/cached).
 
 ```ts
 const getSwapEstimation = async (
