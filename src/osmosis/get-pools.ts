@@ -8,18 +8,23 @@ export const getOsmosisPools = async (): Promise<Pool[]> => {
   const { num_pools } = (await getNumPools()) as unknown as {
     num_pools: string;
   };
-  const numberOfPools = parseInt(num_pools);
 
-  const promises: Promise<Pool[]>[] = [];
-  for (let i = 0; i < numberOfPools; i += 100) {
-    promises.push(
-      getPools({
+  const numberOfPools = parseInt(num_pools);
+  const totalPages = Math.ceil(numberOfPools / 100);
+
+  const promises: Promise<Pool[]>[] = new Array(totalPages)
+    .fill(0)
+    .map((_, offset) => {
+      const promise = getPools({
         pagination: {
-          offset: i,
+          offset,
           limit: 100,
         },
-      }).then((res) => res.pools),
-    );
-  }
+      })
+        .then((res) => res.pools)
+        .catch(() => []);
+      return promise;
+    });
+
   return (await Promise.all(promises)).flat();
 };

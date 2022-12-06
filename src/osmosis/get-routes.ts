@@ -18,8 +18,7 @@ export const getOsmosisRoutes = async ({
   pools: Pool[];
 }): Promise<Route[]> => {
   if (pools === undefined || pools.length === 0) {
-    console.error('Pool is undefined');
-    return;
+    throw 'Pool is undefined';
   }
 
   const amount: CoinPrimitive = {
@@ -77,20 +76,22 @@ export const getOsmosisRoutes = async ({
         (item) => item.coinMinimalDenom === outTokenMinimalDenom,
       );
 
-      if (outTokenCurrency === undefined) {
+      if (!outTokenCurrency) {
         throw 'no out currency';
       }
+
+      const [inPoolAsset, outPoolAsset] = pool.pool_assets;
       return {
         pool: {
           inPoolAsset: {
             coinDecimals: tokenIn.currency.coinDecimals,
             coinMinimalDenom: tokenIn.currency.coinMinimalDenom,
-            amount: new Int(pool.pool_assets[0].token.amount),
-            weight: new Int(pool.pool_assets[0].weight),
+            amount: new Int(inPoolAsset.token.amount),
+            weight: new Int(inPoolAsset.weight),
           },
           outPoolAsset: {
-            amount: new Int(pool.pool_assets[1].token.amount),
-            weight: new Int(pool.pool_assets[1].weight),
+            amount: new Int(outPoolAsset.token.amount),
+            weight: new Int(outPoolAsset.weight),
           },
           swapFee: new Dec(pool.pool_params.swap_fee),
         },
