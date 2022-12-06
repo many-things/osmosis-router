@@ -5,11 +5,17 @@
 </h1>
 
 <blockquote align="center">
-Minimal SDK for Swap Estimation and Spot Price Calculation
+Minimal SDK for Osmosis Swap Estimation
 </blockquote>
 
 > **Warning**<br />
 > Still in draft. Not packaged yet.
+
+## ✅ You can...
+- Swap Estimation
+- Fetch a complete list of LP Pools
+- Fetch routes using in/out tokens
+- Calculate spot price(using `USDC`(`axlUSDC`) as `tokenOutCurrency`)
 
 ## 🚀 Usage
 
