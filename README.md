@@ -12,7 +12,7 @@ Minimal SDK for Osmosis Swap Estimation
 > Still in draft. Not packaged yet.
 
 ## ✅ You can...
-- Swap Estimation
+- Estimate Swap
 - Fetch a complete list of LP Pools
 - Fetch routes using in/out tokens
 - Calculate spot price(using `USDC`(`axlUSDC`) as `tokenOutCurrency`)
