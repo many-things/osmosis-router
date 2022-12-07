@@ -1,6 +1,2 @@
-# docs
-build
+dist
 .vercel
-
-# web
-.next
