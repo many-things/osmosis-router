@@ -4,6 +4,18 @@
   <code>@many-things/osmosis-router</code>
 </h1>
 
+<p align="center">
+  <a aria-label="NPM version" href="https://www.npmjs.com/package/@many-things/osmosis-router">
+    <img alt="" src="https://img.shields.io/npm/v/@many-things/osmosis-router.svg?style=for-the-badge&labelColor=000000">
+  </a>
+  <!-- <a aria-label="NPM downloads" href="https://github.com/">
+    <img alt="" src="https://img.shields.io/npm/dt/@many-things/osmosis-router?style=for-the-badge&labelColor=000">
+  </a> -->
+  <a aria-label="License" href="https://www.npmjs.com/package/@many-things/osmosis-router">
+    <img alt="" src="https://img.shields.io/npm/l/@many-things/osmosis-router.svg?style=for-the-badge&labelColor=000000">
+  </a>
+</p>
+
 <blockquote align="center">
 Minimal SDK for Osmosis Swap Estimation
 </blockquote>
