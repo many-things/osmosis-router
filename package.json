@@ -1,9 +1,12 @@
 {
   "name": "@many-things/osmosis-router",
   "version": "1.0.0",
-  "private": true,
+  "description": "Minimal SDK for Osmosis Swap Estimation",
+  "main": "index.d.js",
+  "types": "index.d.js",
   "repository": "https://github.com/many-things/osmosis-router",
   "author": "Junho Yeo <i@junho.io>",
+  "license": "MIT",
   "scripts": {
     "build": "tsc && swc src -d dist"
   },
@@ -25,5 +28,10 @@
     "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.7.1",
     "typescript": "^4.8.4"
-  }
+  },
+  "files": [
+    "README.md",
+    "LICENSE",
+    "dist"
+  ]
 }
