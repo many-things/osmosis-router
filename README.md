@@ -1,7 +1,7 @@
 <h1 align="center">
   <img alt="satellite-antenna" src="https://emojipedia-us.s3.amazonaws.com/source/microsoft-teams/337/satellite-antenna_1f4e1.png" width="128px" />
   <br />
-  <code>@junhoyeo/osmosis-router</code>
+  <code>@many-things/osmosis-router</code>
 </h1>
 
 <blockquote align="center">
@@ -12,6 +12,7 @@ Minimal SDK for Osmosis Swap Estimation
 > Still in draft. Not packaged yet.
 
 ## ✅ You can...
+
 - Estimate Swap
 - Fetch a complete list of LP Pools
 - Fetch routes using in/out tokens
@@ -23,7 +24,7 @@ First, Define Currencies for your in/out tokens.
 
 ```ts
 // You can also use the type from `@keplr-wallet/types`
-import { type Currency } from '@junhoyeo/osmosis-router';
+import { type Currency } from '@many-things/osmosis-router';
 
 const tokenInCurrency = {
   coinDenom: 'OSMO',
@@ -43,7 +44,7 @@ And just call `getSwapEstimation` with the params.
 Works like magic!
 
 ```ts
-import { getSwapEstimation } from '@junhoyeo/osmosis-router';
+import { getSwapEstimation } from '@many-things/osmosis-router';
 
 // 1 OSMO = 0.965247 USDC
 const amount: string = '1';
@@ -72,9 +73,9 @@ const getSwapEstimation = async (
     { getOsmosisRoutes },
     { getOsmosisSwapEstimation },
   ] = await Promise.all([
-    import('@junhoyeo/osmosis-router/get-pools'),
-    import('@junhoyeo/osmosis-router/get-routes'),
-    import('@junhoyeo/osmosis-router/get-estimation'),
+    import('@many-things/osmosis-router/get-pools'),
+    import('@many-things/osmosis-router/get-routes'),
+    import('@many-things/osmosis-router/get-estimation'),
   ]);
   const routes = await getOsmosisRoutes({
     tokenInCurrency,

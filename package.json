@@ -1,8 +1,8 @@
 {
-  "name": "ditto",
+  "name": "@many-things/osmosis-router",
   "version": "1.0.0",
   "private": true,
-  "repository": "https://github.com/junhoyeo/ditto",
+  "repository": "https://github.com/many-things/osmosis-router",
   "author": "Junho Yeo <i@junho.io>",
   "scripts": {
     "dev": "next dev",
