@@ -1,6 +1,8 @@
 import { Currency } from '@keplr-wallet/types';
 import { Dec, Int } from '@keplr-wallet/unit';
 
+export { type Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
+
 export type Route = {
   pool: {
     inPoolAsset: {

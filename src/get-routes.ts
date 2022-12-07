@@ -2,28 +2,31 @@ import { Currency } from '@keplr-wallet/types';
 import { Dec, Int } from '@keplr-wallet/unit';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
-import { CoinPrimitive, getOptimizedRoutePaths, getPoolAsset } from './pools';
 import { Route } from './types';
+import {
+  CoinPrimitive,
+  getOptimizedRoutePaths,
+  getPoolAsset,
+} from './utils/pools';
 
 export const getOsmosisRoutes = async ({
-  tokenIn,
+  tokenInCurrency,
   tokenOutCurrency,
   pools,
+  amount: tokenInAmount,
 }: {
-  tokenIn: {
-    currency: Currency;
-    amount: string;
-  };
+  tokenInCurrency: Currency;
   tokenOutCurrency: Currency;
   pools: Pool[];
+  amount: string;
 }): Promise<Route[]> => {
   if (pools === undefined || pools.length === 0) {
     throw 'Pool is undefined';
   }
 
   const amount: CoinPrimitive = {
-    denom: tokenIn.currency.coinMinimalDenom,
-    amount: tokenIn.amount,
+    denom: tokenInCurrency.coinMinimalDenom,
+    amount: tokenInAmount,
   };
 
   const routes = getOptimizedRoutePaths(amount, tokenOutCurrency, pools);
@@ -35,7 +38,7 @@ export const getOsmosisRoutes = async ({
     const [pool] = routes[0].pools;
     const inPoolAssetInfo = getPoolAsset(
       pool,
-      tokenIn.currency.coinMinimalDenom,
+      tokenInCurrency.coinMinimalDenom,
     );
     const outPoolAssetInfo = getPoolAsset(
       pool,
@@ -48,8 +51,8 @@ export const getOsmosisRoutes = async ({
       amount: Int;
       weight: Int;
     } = {
-      coinDecimals: tokenIn.currency.coinDecimals,
-      coinMinimalDenom: tokenIn.currency.coinMinimalDenom,
+      coinDecimals: tokenInCurrency.coinDecimals,
+      coinMinimalDenom: tokenInCurrency.coinMinimalDenom,
       amount: new Int(inPoolAssetInfo.token.amount),
       weight: new Int(inPoolAssetInfo.weight),
     };
@@ -84,8 +87,8 @@ export const getOsmosisRoutes = async ({
       return {
         pool: {
           inPoolAsset: {
-            coinDecimals: tokenIn.currency.coinDecimals,
-            coinMinimalDenom: tokenIn.currency.coinMinimalDenom,
+            coinDecimals: tokenInCurrency.coinDecimals,
+            coinMinimalDenom: tokenInCurrency.coinMinimalDenom,
             amount: new Int(inPoolAsset.token.amount),
             weight: new Int(inPoolAsset.weight),
           },

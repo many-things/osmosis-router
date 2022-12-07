@@ -23,8 +23,7 @@ Minimal SDK for Osmosis Swap Estimation
 First, Define Currencies for your in/out tokens.
 
 ```ts
-// You can also use the type from `@keplr-wallet/types`
-import { type Currency } from '@many-things/osmosis-router';
+import { Currency } from '@keplr-wallet/types';
 
 const tokenInCurrency = {
   coinDenom: 'OSMO',
@@ -39,48 +38,49 @@ const tokenOutCurrency = {
 };
 ```
 
-And just call `getSwapEstimation` with the params.
+And just call `estimateSwap` with the params.
 
 Works like magic!
 
 ```ts
-import { getSwapEstimation } from '@many-things/osmosis-router';
+import { estimateSwap } from '@many-things/osmosis-router';
 
 // 1 OSMO = 0.965247 USDC
 const amount: string = '1';
-getSwapEstimation(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.965247 USDC)
+estimateSwap(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.965247 USDC)
 ```
 
 > **Note**<br />
 >
-> `getSwapEstimation` does the following:
+> `estimateSwap` does the following:
 >
 > 1. Update pools in Osmosis
 > 2. Get Routes (in -> out)
 > 3. Estimate swap using resolved route
 >
-> The following is the current code for `getSwapEstimation`.
+> The following is the current code for `estimateSwap`.
 > You can use build your own custom implementation for efficiency, if you're using estimating multiple times(e.g. using pools that are already fetched/cached).
 
 ```ts
-const getSwapEstimation = async (
+import { type Pool } from '@many-things/osmosis-router';
+
+export const estimateSwap = async (
   tokenInCurrency: Currency,
   tokenOutCurrency: Currency,
   amount: string,
-) => {
-  const [
-    { getOsmosisPools },
-    { getOsmosisRoutes },
-    { getOsmosisSwapEstimation },
-  ] = await Promise.all([
-    import('@many-things/osmosis-router/get-pools'),
-    import('@many-things/osmosis-router/get-routes'),
-    import('@many-things/osmosis-router/get-estimation'),
-  ]);
+  pools?: Pool[],
+): Promise<CoinPretty> => {
+  const { getOsmosisPools, getOsmosisRoutes, getOsmosisSwapEstimation } =
+    await import('@many-things/osmosis-router');
+  if (!pools) {
+    pools = await getOsmosisPools();
+  }
+
   const routes = await getOsmosisRoutes({
     tokenInCurrency,
     tokenOutCurrency,
     pools,
+    amount,
   });
 
   const tokenOut = getOsmosisSwapEstimation(tokenInCurrency, routes, amount);

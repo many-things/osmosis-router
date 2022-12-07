@@ -1,7 +1,7 @@
 import { getOsmosisQuery } from '@many-things/cosmos-query';
 import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
-import { OSMOSIS_CHAIN_REST } from './chain';
+import { OSMOSIS_CHAIN_REST } from './constants';
 
 export const getOsmosisPools = async (
   paginationLimit: number = 100,

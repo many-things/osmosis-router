@@ -1,3 +1,5 @@
+export const OSMOSIS_CHAIN_REST = 'https://lcd-osmosis.blockapsis.com';
+
 export const OSMOSIS_CURRENCIES = [
   {
     coinDenom: 'OSMO',
