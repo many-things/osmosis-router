@@ -25,8 +25,8 @@ export const estimateSwap = async (
   const routes = await getOsmosisRoutes({
     tokenInCurrency,
     tokenOutCurrency,
-    pools,
     amount,
+    pools,
   });
 
   const tokenOut = getOsmosisSwapEstimation(tokenInCurrency, routes, amount);

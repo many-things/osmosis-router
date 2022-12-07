@@ -12,13 +12,13 @@ import {
 export const getOsmosisRoutes = async ({
   tokenInCurrency,
   tokenOutCurrency,
-  pools,
   amount: tokenInAmount,
+  pools,
 }: {
   tokenInCurrency: Currency;
   tokenOutCurrency: Currency;
-  pools: Pool[];
   amount: string;
+  pools: Pool[];
 }): Promise<Route[]> => {
   if (pools === undefined || pools.length === 0) {
     throw 'Pool is undefined';
