@@ -17,7 +17,7 @@
 </p>
 
 <blockquote align="center">
-Minimal SDK for Osmosis Swap Estimation
+  Minimal SDK for Osmosis Swap Estimation
 </blockquote>
 
 ```bash
