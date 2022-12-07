@@ -8,8 +8,11 @@
 Minimal SDK for Osmosis Swap Estimation
 </blockquote>
 
-> **Warning**<br />
-> Still in draft. Not packaged yet.
+```bash
+yarn add @many-things/osmosis-router
+# or use NPM
+npm install @many-things/osmosis-router
+```
 
 ## ✅ You can...
 
