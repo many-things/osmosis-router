@@ -1,13 +1,9 @@
 import { Currency } from '@keplr-wallet/types';
 import { Dec, Int } from '@keplr-wallet/unit';
-import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
 
+import { Pool } from './osmosis';
 import { Route } from './types';
-import {
-  CoinPrimitive,
-  getOptimizedRoutePaths,
-  getPoolAsset,
-} from './utils/pools';
+import { CoinPrimitive, getOptimizedRoutePaths } from './utils/pools';
 
 export const getOsmosisRoutes = async ({
   tokenInCurrency,
@@ -34,78 +30,39 @@ export const getOsmosisRoutes = async ({
     throw 'There is no matched pool';
   }
 
-  if (routes[0].pools.length === 1) {
-    const [pool] = routes[0].pools;
-    const inPoolAssetInfo = getPoolAsset(
-      pool,
-      tokenInCurrency.coinMinimalDenom,
-    );
-    const outPoolAssetInfo = getPoolAsset(
-      pool,
-      tokenOutCurrency.coinMinimalDenom,
+  const { OSMOSIS_CURRENCIES } = await import('./constants');
+  const routePath: Route[] = routes[0].pools.map((pool, index) => {
+    const outTokenMinimalDenom = routes[0].tokenOutDenoms[index];
+    const outTokenCurrency = OSMOSIS_CURRENCIES.find(
+      (item) => item.coinMinimalDenom === outTokenMinimalDenom,
     );
 
-    const inPoolAsset: {
-      coinDecimals: number;
-      coinMinimalDenom: string;
-      amount: Int;
-      weight: Int;
-    } = {
-      coinDecimals: tokenInCurrency.coinDecimals,
-      coinMinimalDenom: tokenInCurrency.coinMinimalDenom,
-      amount: new Int(inPoolAssetInfo.token.amount),
-      weight: new Int(inPoolAssetInfo.weight),
-    };
-    const outPoolAsset = {
-      amount: new Int(outPoolAssetInfo.token.amount),
-      weight: new Int(outPoolAssetInfo.weight),
-    };
+    if (!outTokenCurrency) {
+      throw 'no out currency';
+    }
 
-    return [
-      {
-        pool: {
-          inPoolAsset,
-          outPoolAsset,
-          swapFee: new Dec(pool.pool_params.swap_fee),
+    const [inPoolAsset, outPoolAsset] = pool.pool_assets;
+    return {
+      pool: {
+        inPoolAsset: {
+          coinDecimals: tokenInCurrency.coinDecimals,
+          coinMinimalDenom: tokenInCurrency.coinMinimalDenom,
+          amount: new Int(inPoolAsset.token.amount),
+          weight: new Int(inPoolAsset.weight),
         },
-        tokenOutCurrency,
+        outPoolAsset: {
+          amount: new Int(outPoolAsset.token.amount),
+          weight: new Int(outPoolAsset.weight),
+        },
+        swapFee: new Dec(pool.pool_params.swap_fee),
       },
-    ];
-  } else {
-    const { OSMOSIS_CURRENCIES } = await import('./constants');
-    const routePath: Route[] = routes[0].pools.map((pool, index) => {
-      const outTokenMinimalDenom = routes[0].tokenOutDenoms[index];
-      const outTokenCurrency = OSMOSIS_CURRENCIES.find(
-        (item) => item.coinMinimalDenom === outTokenMinimalDenom,
-      );
+      tokenOutCurrency: {
+        coinDenom: outTokenCurrency.coinDenom,
+        coinMinimalDenom: outTokenCurrency.coinMinimalDenom,
+        coinDecimals: outTokenCurrency.coinDecimals,
+      },
+    };
+  });
 
-      if (!outTokenCurrency) {
-        throw 'no out currency';
-      }
-
-      const [inPoolAsset, outPoolAsset] = pool.pool_assets;
-      return {
-        pool: {
-          inPoolAsset: {
-            coinDecimals: tokenInCurrency.coinDecimals,
-            coinMinimalDenom: tokenInCurrency.coinMinimalDenom,
-            amount: new Int(inPoolAsset.token.amount),
-            weight: new Int(inPoolAsset.weight),
-          },
-          outPoolAsset: {
-            amount: new Int(outPoolAsset.token.amount),
-            weight: new Int(outPoolAsset.weight),
-          },
-          swapFee: new Dec(pool.pool_params.swap_fee),
-        },
-        tokenOutCurrency: {
-          coinDenom: outTokenCurrency.coinDenom,
-          coinMinimalDenom: outTokenCurrency.coinMinimalDenom,
-          coinDecimals: outTokenCurrency.coinDecimals,
-        },
-      };
-    });
-
-    return routePath;
-  }
+  return routePath;
 };

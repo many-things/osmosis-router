@@ -1,10 +1,8 @@
 import { AppCurrency } from '@keplr-wallet/types';
 import { Dec, Int } from '@keplr-wallet/unit';
-import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
-import {
-  NoPoolsError,
-  NotEnoughLiquidityError, // RoutePathWithAmount,
-} from '@osmosis-labs/pools';
+import { NoPoolsError, NotEnoughLiquidityError } from '@osmosis-labs/pools';
+
+import { Pool } from '../osmosis';
 
 export interface RoutePath {
   pools: Pool[];
