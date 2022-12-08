@@ -1,21 +1,15 @@
-import { Currency } from '@keplr-wallet/types';
-import { Dec, Int } from '@keplr-wallet/unit';
+import { Int } from '@keplr-wallet/unit';
+
+import { Pool } from './osmosis';
 
 export { type Pool } from './osmosis';
 
-export type Route = {
-  pool: {
-    inPoolAsset: {
-      coinDecimals: number;
-      coinMinimalDenom: string;
-      amount: Int;
-      weight: Int;
-    };
-    outPoolAsset: {
-      amount: Int;
-      weight: Int;
-    };
-    swapFee: Dec;
-  };
-  tokenOutCurrency: Currency;
-};
+export interface RoutePath {
+  pools: Pool[];
+  tokenOutDenoms: string[];
+  tokenInDenom: string;
+}
+
+export interface RoutePathWithAmount extends RoutePath {
+  amount: Int;
+}

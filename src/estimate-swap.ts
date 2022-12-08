@@ -8,7 +8,7 @@ export const estimateSwap = async (
   tokenOutCurrency: Currency,
   amount: string,
   pools?: Pool[],
-) => {
+): Promise<CoinPretty> => {
   const [
     { getOsmosisPools },
     { getOsmosisRoutes },
@@ -25,11 +25,19 @@ export const estimateSwap = async (
     });
   }
 
-  const routes = await getOsmosisRoutes({
+  const routes = getOsmosisRoutes({
     tokenInCurrency,
     tokenOutCurrency,
     amount,
     pools,
   });
-  return routes;
+
+  const tokenOut = getOsmosisSwapEstimation({
+    tokenInCurrency,
+    tokenOutCurrency,
+    amount,
+    pools,
+    routes,
+  });
+  return tokenOut;
 };

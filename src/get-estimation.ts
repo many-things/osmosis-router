@@ -1,28 +1,48 @@
 import { Currency } from '@keplr-wallet/types';
-import { Dec, DecUtils } from '@keplr-wallet/unit';
-import { estimateMultihopSwapExactAmountIn } from '@osmosis-labs/math';
+import { CoinPretty, Dec, Int } from '@keplr-wallet/unit';
 
-import { Route } from './types';
+import { Pool } from './osmosis';
+import { RoutePathWithAmount } from './types';
+import { CoinPrimitive, calculateTokenOutByTokenIn } from './utils/pools';
 
-export const getOsmosisSwapEstimation = (
-  tokenInCurrency: Currency,
-  routes: Route[],
-  amount: string,
-) => {
-  const tokenOutCurrency = routes.at(-1).tokenOutCurrency;
-  const result = estimateMultihopSwapExactAmountIn(
-    {
-      currency: tokenInCurrency,
-      amount: new Dec(amount)
-        .mul(
-          DecUtils.getTenExponentNInPrecisionRange(
-            tokenInCurrency.coinDecimals,
-          ),
-        )
-        .truncate()
-        .toString(),
-    },
-    routes,
-  );
-  return result.tokenOut.moveDecimalPointLeft(tokenOutCurrency.coinDecimals);
+export const sendCurrency: Currency = {
+  coinDenom: 'OSMO',
+  coinMinimalDenom: 'uosmo',
+  coinDecimals: 6,
+};
+
+export const getOsmosisSwapEstimation = async ({
+  tokenInCurrency,
+  tokenOutCurrency,
+  amount: tokenInAmount,
+  pools,
+  routes: paths,
+}: {
+  tokenInCurrency: Currency;
+  tokenOutCurrency: Currency;
+  amount: string;
+  pools: Pool[];
+  routes: RoutePathWithAmount[];
+}): Promise<CoinPretty> => {
+  if (!pools || pools.length === 0) {
+    throw 'Pool is undefined';
+  }
+
+  const amount: CoinPrimitive = {
+    denom: tokenInCurrency.coinMinimalDenom,
+    amount: tokenInAmount,
+  };
+
+  const zero = new CoinPretty(tokenOutCurrency, new Dec(0)).ready(false);
+  if (paths.length === 0) {
+    return zero;
+  }
+
+  const result = calculateTokenOutByTokenIn(paths);
+  if (!result.amount.gt(new Int(0))) {
+    // Not enough liquidity
+    return zero;
+  }
+
+  return new CoinPretty(tokenOutCurrency, result.amount).locale(false);
 };

@@ -94,14 +94,20 @@ export const estimateSwap = async (
     pools = await getOsmosisPools();
   }
 
-  const routes = await getOsmosisRoutes({
+  const routes = getOsmosisRoutes({
     tokenInCurrency,
     tokenOutCurrency,
-    pools,
     amount,
+    pools,
   });
 
-  const tokenOut = getOsmosisSwapEstimation(tokenInCurrency, routes, amount);
+  const tokenOut = getOsmosisSwapEstimation({
+    tokenInCurrency,
+    tokenOutCurrency,
+    amount,
+    pools,
+    routes,
+  });
   return tokenOut;
 };
 ```

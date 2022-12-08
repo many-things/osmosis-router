@@ -1,31 +1,9 @@
-import { AppCurrency } from '@keplr-wallet/types';
-import {
-  CoinPretty,
-  Dec,
-  DecUtils,
-  Int,
-  IntPretty,
-  RatePretty,
-} from '@keplr-wallet/unit';
+import { Dec, Int } from '@keplr-wallet/unit';
 import * as WeightedPoolMath from '@osmosis-labs/math';
 import { NoPoolsError, NotEnoughLiquidityError } from '@osmosis-labs/pools';
 
 import { Pool } from '../osmosis';
-
-export interface RoutePath {
-  pools: Pool[];
-  tokenOutDenoms: string[];
-  tokenInDenom: string;
-}
-
-export interface RoutePathWithAmount extends RoutePath {
-  amount: Int;
-}
-
-export interface SwapPath {
-  poolId: string;
-  tokenOutCurrency: AppCurrency;
-}
+import { RoutePath, RoutePathWithAmount } from '../types';
 
 /**
  * Utils
@@ -211,31 +189,6 @@ const getCandidatePaths = (
     },
   );
 
-  // filteredRoutePaths = filteredRoutePaths.sort((path1, path2) => {
-  //   // Priority is given to direct swap.
-  //   // For direct swap, sort by normalized liquidity.
-  //   // In case of multihop swap, sort by first normalized liquidity.
-
-  //   const path1IsDirect = path1.pools.length === 1;
-  //   const path2IsDirect = path2.pools.length === 1;
-  //   if (!path1IsDirect || !path2IsDirect) {
-  //     return path1IsDirect ? -1 : 1;
-  //   }
-
-  //   const path1NormalizedLiquidity = getNormalizedLiquidity({
-  //     pool: path1.pools[0],
-  //     tokenInDenom,
-  //     tokenOutDenom: path1.tokenOutDenoms[0],
-  //   });
-  //   const path2NormalizedLiquidity = getNormalizedLiquidity({
-  //     pool: path2.pools[0],
-  //     tokenInDenom,
-  //     tokenOutDenom: path2.tokenOutDenoms[0],
-  //   });
-
-  //   return path1NormalizedLiquidity.gte(path2NormalizedLiquidity) ? -1 : 1;
-  // });
-
   return filteredRoutePaths;
 };
 
@@ -249,7 +202,7 @@ const getCandidatePaths = (
  * @param pools
  * @returns RoutePathWithAmount[]
  */
-const getOptimizedRoutesByTokenIn = (
+export const getOptimizedRoutesByTokenIn = (
   tokenIn: {
     denom: string;
     amount: Int;
@@ -312,44 +265,6 @@ export interface CoinPrimitive {
   denom: string;
   amount: string;
 }
-
-/**
- * Get optimized swap route path from given pool
- * https://github.com/osmosis-labs/osmosis-frontend/blob/f065a57ee8f44104c37f3dcebd545d057128bbac/packages/stores/src/ui-config/trade-token-in-config.ts#L194-L220
- *
- * @param amount
- * @param outCurrency
- * @param pools
- * @returns RoutePathWithAmount
- */
-export const getOptimizedRoutePaths = (
-  amount: CoinPrimitive,
-  outCurrency: AppCurrency,
-  pools: Pool[],
-): RoutePathWithAmount[] => {
-  if (
-    !amount.amount ||
-    new Int(amount.amount).lte(new Int(0)) ||
-    amount.denom === '_unknown' ||
-    outCurrency.coinMinimalDenom === '_unknown'
-  ) {
-    return [];
-  }
-
-  try {
-    return getOptimizedRoutesByTokenIn(
-      {
-        denom: amount.denom,
-        amount: new Int(amount.amount),
-      },
-      outCurrency.coinMinimalDenom,
-      5,
-      pools,
-    );
-  } catch (e: any) {
-    return [];
-  }
-};
 
 const getPoolAsset = (
   pool: Pool,
@@ -445,59 +360,6 @@ const getTokenOutByTokenIn = (
     priceImpact,
   };
 };
-
-// const getTokenOutByTokenInComputedFn = (
-//   pool: Pool,
-//   swapFee: Dec,
-//   tokenInDenom: string,
-//   tokenInAmount: string,
-//   tokenOutDenom: string,
-// ): {
-//   amount: CoinPretty;
-//   afterSpotPriceInOverOut: IntPretty;
-//   afterSpotPriceOutOverIn: IntPretty;
-//   effectivePriceInOverOut: IntPretty;
-//   effectivePriceOutOverIn: IntPretty;
-//   priceImpact: RatePretty;
-// } => {
-//   // computedFn(
-//   // (tokenInDenom: string, tokenInAmount: string, tokenOutDenom: string) => {
-//   const result = getTokenOutByTokenIn(
-//     pool,
-//     swapFee,
-//     {
-//       denom: tokenInDenom,
-//       amount: new Int(tokenInAmount),
-//     },
-//     tokenOutDenom,
-//   );
-
-//   // const chainInfo = this.chainGetter.getChain(this.chainId);
-//   const outCurrency = chainInfo.forceFindCurrency(tokenOutDenom);
-
-//   const spotPriceInOverOutMul = DecUtils.getTenExponentN(
-//     outCurrency.coinDecimals -
-//       chainInfo.forceFindCurrency(tokenInDenom).coinDecimals,
-//   );
-
-//   return {
-//     amount: new CoinPretty(outCurrency, result.amount),
-//     afterSpotPriceInOverOut: new IntPretty(
-//       result.afterSpotPriceInOverOut.mulTruncate(spotPriceInOverOutMul),
-//     ),
-//     afterSpotPriceOutOverIn: new IntPretty(
-//       result.afterSpotPriceOutOverIn.quoTruncate(spotPriceInOverOutMul),
-//     ),
-//     effectivePriceInOverOut: new IntPretty(
-//       result.effectivePriceInOverOut.mulTruncate(spotPriceInOverOutMul),
-//     ),
-//     effectivePriceOutOverIn: new IntPretty(
-//       result.effectivePriceOutOverIn.quoTruncate(spotPriceInOverOutMul),
-//     ),
-//     priceImpact: new RatePretty(result.priceImpact),
-//   };
-// };
-// // );
 
 export const calculateTokenOutByTokenIn = (
   paths: RoutePathWithAmount[],
