@@ -38,11 +38,11 @@ export const getOsmosisSwapEstimation = async ({
     return zero;
   }
 
-  const result = calculateTokenOutByTokenIn(paths);
-  if (!result.amount.gt(new Int(0))) {
+  const tokenOutAmount = calculateTokenOutByTokenIn(paths);
+  if (!tokenOutAmount.gt(new Int(0))) {
     // Not enough liquidity
     return zero;
   }
 
-  return new CoinPretty(tokenOutCurrency, result.amount).locale(false);
+  return new CoinPretty(tokenOutCurrency, tokenOutAmount).locale(false);
 };

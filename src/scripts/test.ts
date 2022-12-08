@@ -23,15 +23,19 @@ const tokenOutCurrency: Currency = {
 };
 
 const main = async () => {
-  let value = await estimateSwap(
+  let amount = await estimateSwap(
     tokenInCurrency.OSMO,
     tokenOutCurrency,
     '1000000',
   );
-  console.log('OSMO', value.amount.toString());
+  console.log('OSMO', amount.toString());
 
-  value = await estimateSwap(tokenInCurrency.ATOM, tokenOutCurrency, '1000000');
-  console.log('ATOM', value.amount.toString());
+  amount = await estimateSwap(
+    tokenInCurrency.ATOM,
+    tokenOutCurrency,
+    '1000000',
+  );
+  console.log('ATOM', amount.toString());
 };
 
 main().catch((e) => {
