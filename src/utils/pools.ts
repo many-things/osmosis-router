@@ -366,8 +366,8 @@ export const calculateTokenOutByTokenIn = (
       if (i === path.pools.length - 1) {
         totalOutAmount = totalOutAmount.add(tokenOutAmount);
       } else {
-        // previousInDenom = outDenom;
-        // previousInAmount = tokenOut.amount;
+        previousInDenom = outDenom;
+        previousInAmount = tokenOutAmount;
       }
     }
   }
