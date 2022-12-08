@@ -1,4 +1,4 @@
-export { type Pool, type Route } from './types';
+export { type Pool, type RoutePath, type RoutePathWithAmount } from './types';
 export { estimateSwap } from './estimate-swap';
 
 export { getOsmosisSwapEstimation } from './get-estimation';

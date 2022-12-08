@@ -15,9 +15,9 @@
     "@keplr-wallet/cosmos": "0.10.24",
     "@keplr-wallet/types": "0.10.24",
     "@keplr-wallet/unit": "0.10.24",
-    "@many-things/cosmos-query": "^0.1.22",
     "@osmosis-labs/math": "^3.0.0",
-    "@osmosis-labs/pools": "^3.0.0"
+    "@osmosis-labs/pools": "^3.0.0",
+    "axios": "^1.2.1"
   },
   "devDependencies": {
     "@swc/cli": "^0.1.57",
@@ -25,6 +25,7 @@
     "@trivago/prettier-plugin-sort-imports": "^3.4.0",
     "@types/node": "^18.11.9",
     "prettier": "^2.7.1",
+    "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
   },
   "files": [

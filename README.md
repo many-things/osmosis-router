@@ -43,12 +43,12 @@ First, Define Currencies for your in/out tokens.
 ```ts
 import { Currency } from '@keplr-wallet/types';
 
-const tokenInCurrency = {
+const tokenInCurrency: Currency = {
   coinDenom: 'OSMO',
   coinMinimalDenom: 'uosmo',
   coinDecimals: 6,
 };
-const tokenOutCurrency = {
+const tokenOutCurrency: Currency = {
   coinDenom: 'USDC',
   coinMinimalDenom:
     'ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858',
@@ -63,9 +63,9 @@ Works like magic!
 ```ts
 import { estimateSwap } from '@many-things/osmosis-router';
 
-// 1 OSMO = 0.965247 USDC
-const amount: string = '1';
-estimateSwap(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.965247 USDC)
+// 1 OSMO = 0.899660 USDC
+const amount: string = (1 * 10 ** 6).toString();
+estimateSwap(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.899660 USDC)
 ```
 
 > **Note**<br />
@@ -94,14 +94,20 @@ export const estimateSwap = async (
     pools = await getOsmosisPools();
   }
 
-  const routes = await getOsmosisRoutes({
+  const routes = getOsmosisRoutes({
     tokenInCurrency,
     tokenOutCurrency,
-    pools,
     amount,
+    pools,
   });
 
-  const tokenOut = getOsmosisSwapEstimation(tokenInCurrency, routes, amount);
+  const tokenOut = getOsmosisSwapEstimation({
+    tokenInCurrency,
+    tokenOutCurrency,
+    amount,
+    pools,
+    routes,
+  });
   return tokenOut;
 };
 ```

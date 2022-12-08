@@ -14,21 +14,30 @@ export const estimateSwap = async (
     { getOsmosisRoutes },
     { getOsmosisSwapEstimation },
   ] = await Promise.all([
-    !pools ? import('./get-pools') : { getOsmosisPools: () => [] },
+    !pools ? import('./get-pools') : { getOsmosisPools: async () => [] },
     import('./get-routes'),
     import('./get-estimation'),
   ]);
   if (!pools) {
-    pools = await getOsmosisPools();
+    pools = await getOsmosisPools().catch((e) => {
+      console.log(e);
+      return [];
+    });
   }
 
-  const routes = await getOsmosisRoutes({
+  const routes = getOsmosisRoutes({
     tokenInCurrency,
     tokenOutCurrency,
     amount,
     pools,
   });
 
-  const tokenOut = getOsmosisSwapEstimation(tokenInCurrency, routes, amount);
+  const tokenOut = getOsmosisSwapEstimation({
+    tokenInCurrency,
+    tokenOutCurrency,
+    amount,
+    pools,
+    routes,
+  });
   return tokenOut;
 };

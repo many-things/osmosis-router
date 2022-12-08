@@ -1,16 +1,9 @@
-import { getOsmosisQuery } from '@many-things/cosmos-query';
-import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
-
-import { OSMOSIS_CHAIN_REST } from './constants';
+import { Pool, getNumPools, getPools } from './osmosis';
 
 export const getOsmosisPools = async (
   paginationLimit: number = 100,
 ): Promise<Pool[]> => {
-  const { getPools, getNumPools } = getOsmosisQuery(OSMOSIS_CHAIN_REST);
-  const { num_pools } = (await getNumPools()) as unknown as {
-    num_pools: string;
-  };
-
+  const { num_pools } = await getNumPools();
   const numberOfPools = parseInt(num_pools);
   const totalPages = Math.ceil(numberOfPools / 100);
 
@@ -24,7 +17,10 @@ export const getOsmosisPools = async (
         },
       })
         .then((res) => res.pools)
-        .catch(() => []);
+        .catch((e) => {
+          console.error(e);
+          return [];
+        });
       return promise;
     });
 

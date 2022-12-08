@@ -17,5 +17,11 @@
     "emitDeclarationOnly": true,
     "noEmit": false
   },
-  "include": ["src"]
+  "include": ["src"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    },
+    "include": ["src"]
+  }
 }

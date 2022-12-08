@@ -1,25 +1,9 @@
-import { AppCurrency } from '@keplr-wallet/types';
 import { Dec, Int } from '@keplr-wallet/unit';
-import { Pool } from '@many-things/cosmos-query/dist/apis/osmosis/gamm/types';
-import {
-  NoPoolsError,
-  NotEnoughLiquidityError, // RoutePathWithAmount,
-} from '@osmosis-labs/pools';
+import * as WeightedPoolMath from '@osmosis-labs/math';
+import { NoPoolsError, NotEnoughLiquidityError } from '@osmosis-labs/pools';
 
-export interface RoutePath {
-  pools: Pool[];
-  tokenOutDenoms: string[];
-  tokenInDenom: string;
-}
-
-export interface RoutePathWithAmount extends RoutePath {
-  amount: Int;
-}
-
-export interface SwapPath {
-  poolId: string;
-  tokenOutCurrency: AppCurrency;
-}
+import { Pool } from '../osmosis';
+import { RoutePath, RoutePathWithAmount } from '../types';
 
 /**
  * Utils
@@ -36,20 +20,9 @@ const hasPoolAsset = (pool: Pool, denom: string): boolean => {
   return hasPool !== undefined;
 };
 
-export const getPoolAsset = (pool: Pool, denom: string) => {
-  const poolAsset = pool.pool_assets.find((item) => {
-    return item.token.denom === denom;
-  });
-  if (!poolAsset) {
-    console.error(pool, denom);
-    throw new Error(`Pool ${pool.id} doesn't have the pool asset for ${denom}`);
-  }
-  return poolAsset;
-};
-
 const getLimitAmountByTokenIn = (pool: Pool, denom: string): Int => {
   const poolAsset = getPoolAsset(pool, denom);
-  return new Int(poolAsset.token.amount).toDec().mul(new Dec('0.3')).truncate();
+  return poolAsset.amount.toDec().mul(new Dec('0.3')).truncate();
 };
 
 const getNormalizedLiquidity = ({
@@ -65,7 +38,7 @@ const getNormalizedLiquidity = ({
   const tokenOut = getPoolAsset(pool, tokenOutDenom);
   // todo
   // return new Dec("1");
-  return new Int(tokenOut.token.amount)
+  return tokenOut.amount
     .toDec()
     .mul(new Dec(tokenIn.weight))
     .quo(new Dec(tokenIn.weight).add(new Dec(tokenOut.weight)));
@@ -139,11 +112,6 @@ const getCandidatePaths = (
         });
       }
     }
-  });
-
-  console.info({
-    multihopCandiateHasOnlyInIntermediates,
-    multihopCandiateHasOnlyOutIntermediates,
   });
 
   // This method is actually used to calculate an optimized routes.
@@ -221,31 +189,6 @@ const getCandidatePaths = (
     },
   );
 
-  // filteredRoutePaths = filteredRoutePaths.sort((path1, path2) => {
-  //   // Priority is given to direct swap.
-  //   // For direct swap, sort by normalized liquidity.
-  //   // In case of multihop swap, sort by first normalized liquidity.
-
-  //   const path1IsDirect = path1.pools.length === 1;
-  //   const path2IsDirect = path2.pools.length === 1;
-  //   if (!path1IsDirect || !path2IsDirect) {
-  //     return path1IsDirect ? -1 : 1;
-  //   }
-
-  //   const path1NormalizedLiquidity = getNormalizedLiquidity({
-  //     pool: path1.pools[0],
-  //     tokenInDenom,
-  //     tokenOutDenom: path1.tokenOutDenoms[0],
-  //   });
-  //   const path2NormalizedLiquidity = getNormalizedLiquidity({
-  //     pool: path2.pools[0],
-  //     tokenInDenom,
-  //     tokenOutDenom: path2.tokenOutDenoms[0],
-  //   });
-
-  //   return path1NormalizedLiquidity.gte(path2NormalizedLiquidity) ? -1 : 1;
-  // });
-
   return filteredRoutePaths;
 };
 
@@ -259,7 +202,7 @@ const getCandidatePaths = (
  * @param pools
  * @returns RoutePathWithAmount[]
  */
-const getOptimizedRoutesByTokenIn = (
+export const getOptimizedRoutesByTokenIn = (
   tokenIn: {
     denom: string;
     amount: Int;
@@ -268,8 +211,6 @@ const getOptimizedRoutesByTokenIn = (
   maxPools: number,
   pools: Pool[],
 ): RoutePathWithAmount[] => {
-  console.info('getOptimizedRoutesByTokenIn called');
-
   if (!tokenIn.amount.isPositive()) {
     throw new Error('Token in amount is zero or negative');
   }
@@ -286,7 +227,6 @@ const getOptimizedRoutesByTokenIn = (
   let totalLimitAmount = new Int(0);
 
   for (const path of paths) {
-    console.info(3, tokenIn.denom, path.pools[0]);
     const limitAmount = getLimitAmountByTokenIn(path.pools[0], tokenIn.denom);
 
     totalLimitAmount = totalLimitAmount.add(limitAmount);
@@ -326,41 +266,111 @@ export interface CoinPrimitive {
   amount: string;
 }
 
-/**
- * Get optimized swap route path from given pool
- * https://github.com/osmosis-labs/osmosis-frontend/blob/f065a57ee8f44104c37f3dcebd545d057128bbac/packages/stores/src/ui-config/trade-token-in-config.ts#L194-L220
- *
- * @param amount
- * @param outCurrency
- * @param pools
- * @returns RoutePathWithAmount
- */
-export const getOptimizedRoutePaths = (
-  amount: CoinPrimitive,
-  outCurrency: AppCurrency,
-  pools: Pool[],
-): RoutePathWithAmount[] => {
-  if (
-    !amount.amount ||
-    new Int(amount.amount).lte(new Int(0)) ||
-    amount.denom === '_unknown' ||
-    outCurrency.coinMinimalDenom === '_unknown'
-  ) {
-    return [];
+const getPoolAsset = (
+  pool: Pool,
+  denom: string,
+): { denom: string; amount: Int; weight: Int } => {
+  const poolAsset = pool.pool_assets.find(
+    (asset) => asset.token.denom === denom,
+  );
+  if (!poolAsset) {
+    throw new Error(`Pool ${pool.id} doesn't have the pool asset for ${denom}`);
   }
 
-  try {
-    return getOptimizedRoutesByTokenIn(
-      {
-        denom: amount.denom,
-        amount: new Int(amount.amount),
-      },
-      outCurrency.coinMinimalDenom,
-      5,
-      pools,
-    );
-  } catch (e) {
-    console.error(e);
-    return [];
+  return {
+    denom: poolAsset.token.denom,
+    amount: new Int(poolAsset.token.amount),
+    weight: new Int(poolAsset.weight),
+  };
+};
+
+const getTokenOutByTokenIn = (
+  pool: Pool,
+  swapFee: Dec,
+  tokenIn: { denom: string; amount: Int },
+  tokenOutDenom: string,
+): Int => {
+  const inPoolAsset = getPoolAsset(pool, tokenIn.denom);
+  const outPoolAsset = getPoolAsset(pool, tokenOutDenom);
+
+  const tokenOutAmount = WeightedPoolMath.calcOutGivenIn(
+    new Dec(inPoolAsset.amount),
+    new Dec(inPoolAsset.weight),
+    new Dec(outPoolAsset.amount),
+    new Dec(outPoolAsset.weight),
+    new Dec(tokenIn.amount),
+    swapFee,
+  ).truncate();
+
+  if (tokenOutAmount.equals(new Int(0))) {
+    return new Int(0);
   }
+
+  return tokenOutAmount;
+};
+
+export const calculateTokenOutByTokenIn = (
+  paths: RoutePathWithAmount[],
+): Int => {
+  if (paths.length === 0) {
+    throw new Error('Paths are empty');
+  }
+
+  let totalOutAmount: Int = new Int(0);
+
+  let sumAmount = new Int(0);
+  for (const path of paths) {
+    sumAmount = sumAmount.add(path.amount);
+  }
+
+  let outDenom: string | undefined;
+  for (const path of paths) {
+    if (
+      path.pools.length !== path.tokenOutDenoms.length ||
+      path.pools.length === 0
+    ) {
+      throw new Error('Invalid path');
+    }
+
+    if (!outDenom) {
+      outDenom = path.tokenOutDenoms[path.tokenOutDenoms.length - 1];
+    } else if (
+      outDenom !== path.tokenOutDenoms[path.tokenOutDenoms.length - 1]
+    ) {
+      throw new Error('Paths have different out denom');
+    }
+
+    let previousInDenom = path.tokenInDenom;
+    let previousInAmount = path.amount;
+
+    for (let i = 0; i < path.pools.length; i++) {
+      const pool = path.pools[i];
+      const outDenom = path.tokenOutDenoms[i];
+
+      const poolSwapFee = new Dec(pool.pool_params.swap_fee);
+
+      // less fee
+      const tokenOutAmount = getTokenOutByTokenIn(
+        pool,
+        poolSwapFee,
+        { denom: previousInDenom, amount: previousInAmount },
+        outDenom,
+      );
+
+      if (!tokenOutAmount.gt(new Int(0))) {
+        // not enough liquidity
+        console.warn('Token out is 0 through pool: ', pool.id);
+        return tokenOutAmount;
+      }
+
+      if (i === path.pools.length - 1) {
+        totalOutAmount = totalOutAmount.add(tokenOutAmount);
+      } else {
+        previousInDenom = outDenom;
+        previousInAmount = tokenOutAmount;
+      }
+    }
+  }
+
+  return totalOutAmount;
 };
