@@ -1,5 +1,13 @@
 import { AppCurrency } from '@keplr-wallet/types';
-import { Dec, Int } from '@keplr-wallet/unit';
+import {
+  CoinPretty,
+  Dec,
+  DecUtils,
+  Int,
+  IntPretty,
+  RatePretty,
+} from '@keplr-wallet/unit';
+import * as WeightedPoolMath from '@osmosis-labs/math';
 import { NoPoolsError, NotEnoughLiquidityError } from '@osmosis-labs/pools';
 
 import { Pool } from '../osmosis';
@@ -34,20 +42,9 @@ const hasPoolAsset = (pool: Pool, denom: string): boolean => {
   return hasPool !== undefined;
 };
 
-export const getPoolAsset = (pool: Pool, denom: string) => {
-  const poolAsset = pool.pool_assets.find((item) => {
-    return item.token.denom === denom;
-  });
-  if (!poolAsset) {
-    console.error(pool, denom);
-    throw new Error(`Pool ${pool.id} doesn't have the pool asset for ${denom}`);
-  }
-  return poolAsset;
-};
-
 const getLimitAmountByTokenIn = (pool: Pool, denom: string): Int => {
   const poolAsset = getPoolAsset(pool, denom);
-  return new Int(poolAsset.token.amount).toDec().mul(new Dec('0.3')).truncate();
+  return poolAsset.amount.toDec().mul(new Dec('0.3')).truncate();
 };
 
 const getNormalizedLiquidity = ({
@@ -63,7 +60,7 @@ const getNormalizedLiquidity = ({
   const tokenOut = getPoolAsset(pool, tokenOutDenom);
   // todo
   // return new Dec("1");
-  return new Int(tokenOut.token.amount)
+  return tokenOut.amount
     .toDec()
     .mul(new Dec(tokenIn.weight))
     .quo(new Dec(tokenIn.weight).add(new Dec(tokenOut.weight)));
@@ -137,11 +134,6 @@ const getCandidatePaths = (
         });
       }
     }
-  });
-
-  console.info({
-    multihopCandiateHasOnlyInIntermediates,
-    multihopCandiateHasOnlyOutIntermediates,
   });
 
   // This method is actually used to calculate an optimized routes.
@@ -266,8 +258,6 @@ const getOptimizedRoutesByTokenIn = (
   maxPools: number,
   pools: Pool[],
 ): RoutePathWithAmount[] => {
-  console.info('getOptimizedRoutesByTokenIn called');
-
   if (!tokenIn.amount.isPositive()) {
     throw new Error('Token in amount is zero or negative');
   }
@@ -284,7 +274,6 @@ const getOptimizedRoutesByTokenIn = (
   let totalLimitAmount = new Int(0);
 
   for (const path of paths) {
-    console.info(3, tokenIn.denom, path.pools[0]);
     const limitAmount = getLimitAmountByTokenIn(path.pools[0], tokenIn.denom);
 
     totalLimitAmount = totalLimitAmount.add(limitAmount);
@@ -357,8 +346,292 @@ export const getOptimizedRoutePaths = (
       5,
       pools,
     );
-  } catch (e) {
-    console.error(e);
+  } catch (e: any) {
     return [];
   }
+};
+
+const getPoolAsset = (
+  pool: Pool,
+  denom: string,
+): { denom: string; amount: Int; weight: Int } => {
+  const poolAsset = pool.pool_assets.find(
+    (asset) => asset.token.denom === denom,
+  );
+  if (!poolAsset) {
+    throw new Error(`Pool ${pool.id} doesn't have the pool asset for ${denom}`);
+  }
+
+  return {
+    denom: poolAsset.token.denom,
+    amount: new Int(poolAsset.token.amount),
+    weight: new Int(poolAsset.weight),
+  };
+};
+
+const getTokenOutByTokenIn = (
+  pool: Pool,
+  swapFee: Dec,
+  tokenIn: { denom: string; amount: Int },
+  tokenOutDenom: string,
+): {
+  amount: Int;
+  beforeSpotPriceInOverOut: Dec;
+  beforeSpotPriceOutOverIn: Dec;
+  afterSpotPriceInOverOut: Dec;
+  afterSpotPriceOutOverIn: Dec;
+  effectivePriceInOverOut: Dec;
+  effectivePriceOutOverIn: Dec;
+  priceImpact: Dec;
+} => {
+  const inPoolAsset = getPoolAsset(pool, tokenIn.denom);
+  const outPoolAsset = getPoolAsset(pool, tokenOutDenom);
+
+  const beforeSpotPriceInOverOut = WeightedPoolMath.calcSpotPrice(
+    new Dec(inPoolAsset.amount),
+    new Dec(inPoolAsset.weight),
+    new Dec(outPoolAsset.amount),
+    new Dec(outPoolAsset.weight),
+    swapFee,
+  );
+
+  const tokenOutAmount = WeightedPoolMath.calcOutGivenIn(
+    new Dec(inPoolAsset.amount),
+    new Dec(inPoolAsset.weight),
+    new Dec(outPoolAsset.amount),
+    new Dec(outPoolAsset.weight),
+    new Dec(tokenIn.amount),
+    swapFee,
+  ).truncate();
+
+  if (tokenOutAmount.equals(new Int(0))) {
+    return {
+      amount: new Int(0),
+      beforeSpotPriceInOverOut: new Dec(0),
+      beforeSpotPriceOutOverIn: new Dec(0),
+      afterSpotPriceInOverOut: new Dec(0),
+      afterSpotPriceOutOverIn: new Dec(0),
+      effectivePriceInOverOut: new Dec(0),
+      effectivePriceOutOverIn: new Dec(0),
+      priceImpact: new Dec(0),
+    };
+  }
+
+  const afterSpotPriceInOverOut = WeightedPoolMath.calcSpotPrice(
+    new Dec(inPoolAsset.amount).add(new Dec(tokenIn.amount)),
+    new Dec(inPoolAsset.weight),
+    new Dec(outPoolAsset.amount).sub(new Dec(tokenOutAmount)),
+    new Dec(outPoolAsset.weight),
+    swapFee,
+  );
+
+  if (afterSpotPriceInOverOut.lt(beforeSpotPriceInOverOut)) {
+    throw new Error("Spot price can't be decreased after swap");
+  }
+
+  const effectivePrice = new Dec(tokenIn.amount).quo(new Dec(tokenOutAmount));
+  const priceImpact = effectivePrice
+    .quo(beforeSpotPriceInOverOut)
+    .sub(new Dec('1'));
+
+  return {
+    amount: tokenOutAmount,
+    beforeSpotPriceInOverOut,
+    beforeSpotPriceOutOverIn: new Dec(1).quoTruncate(beforeSpotPriceInOverOut),
+    afterSpotPriceInOverOut,
+    afterSpotPriceOutOverIn: new Dec(1).quoTruncate(afterSpotPriceInOverOut),
+    effectivePriceInOverOut: effectivePrice,
+    effectivePriceOutOverIn: new Dec(1).quoTruncate(effectivePrice),
+    priceImpact,
+  };
+};
+
+// const getTokenOutByTokenInComputedFn = (
+//   pool: Pool,
+//   swapFee: Dec,
+//   tokenInDenom: string,
+//   tokenInAmount: string,
+//   tokenOutDenom: string,
+// ): {
+//   amount: CoinPretty;
+//   afterSpotPriceInOverOut: IntPretty;
+//   afterSpotPriceOutOverIn: IntPretty;
+//   effectivePriceInOverOut: IntPretty;
+//   effectivePriceOutOverIn: IntPretty;
+//   priceImpact: RatePretty;
+// } => {
+//   // computedFn(
+//   // (tokenInDenom: string, tokenInAmount: string, tokenOutDenom: string) => {
+//   const result = getTokenOutByTokenIn(
+//     pool,
+//     swapFee,
+//     {
+//       denom: tokenInDenom,
+//       amount: new Int(tokenInAmount),
+//     },
+//     tokenOutDenom,
+//   );
+
+//   // const chainInfo = this.chainGetter.getChain(this.chainId);
+//   const outCurrency = chainInfo.forceFindCurrency(tokenOutDenom);
+
+//   const spotPriceInOverOutMul = DecUtils.getTenExponentN(
+//     outCurrency.coinDecimals -
+//       chainInfo.forceFindCurrency(tokenInDenom).coinDecimals,
+//   );
+
+//   return {
+//     amount: new CoinPretty(outCurrency, result.amount),
+//     afterSpotPriceInOverOut: new IntPretty(
+//       result.afterSpotPriceInOverOut.mulTruncate(spotPriceInOverOutMul),
+//     ),
+//     afterSpotPriceOutOverIn: new IntPretty(
+//       result.afterSpotPriceOutOverIn.quoTruncate(spotPriceInOverOutMul),
+//     ),
+//     effectivePriceInOverOut: new IntPretty(
+//       result.effectivePriceInOverOut.mulTruncate(spotPriceInOverOutMul),
+//     ),
+//     effectivePriceOutOverIn: new IntPretty(
+//       result.effectivePriceOutOverIn.quoTruncate(spotPriceInOverOutMul),
+//     ),
+//     priceImpact: new RatePretty(result.priceImpact),
+//   };
+// };
+// // );
+
+export const calculateTokenOutByTokenIn = (
+  paths: RoutePathWithAmount[],
+): {
+  amount: Int;
+  beforeSpotPriceInOverOut: Dec;
+  beforeSpotPriceOutOverIn: Dec;
+  afterSpotPriceInOverOut: Dec;
+  afterSpotPriceOutOverIn: Dec;
+  effectivePriceInOverOut: Dec;
+  effectivePriceOutOverIn: Dec;
+  tokenInFeeAmount: Int;
+  swapFee: Dec;
+  priceImpact: Dec;
+} => {
+  if (paths.length === 0) {
+    throw new Error('Paths are empty');
+  }
+
+  let totalOutAmount: Int = new Int(0);
+  let totalBeforeSpotPriceInOverOut: Dec = new Dec(0);
+  let totalAfterSpotPriceInOverOut: Dec = new Dec(0);
+  let totalEffectivePriceInOverOut: Dec = new Dec(0);
+  let totalSwapFee: Dec = new Dec(0);
+
+  let sumAmount = new Int(0);
+  for (const path of paths) {
+    sumAmount = sumAmount.add(path.amount);
+  }
+
+  let outDenom: string | undefined;
+  for (const path of paths) {
+    if (
+      path.pools.length !== path.tokenOutDenoms.length ||
+      path.pools.length === 0
+    ) {
+      throw new Error('Invalid path');
+    }
+
+    if (!outDenom) {
+      outDenom = path.tokenOutDenoms[path.tokenOutDenoms.length - 1];
+    } else if (
+      outDenom !== path.tokenOutDenoms[path.tokenOutDenoms.length - 1]
+    ) {
+      throw new Error('Paths have different out denom');
+    }
+
+    const amountFraction = path.amount.toDec().quoTruncate(sumAmount.toDec());
+
+    let previousInDenom = path.tokenInDenom;
+    let previousInAmount = path.amount;
+
+    let beforeSpotPriceInOverOut: Dec = new Dec(1);
+    let afterSpotPriceInOverOut: Dec = new Dec(1);
+    let effectivePriceInOverOut: Dec = new Dec(1);
+    let swapFee: Dec = new Dec(0);
+
+    for (let i = 0; i < path.pools.length; i++) {
+      const pool = path.pools[i];
+      const outDenom = path.tokenOutDenoms[i];
+
+      const poolSwapFee = new Dec(pool.pool_params.swap_fee);
+
+      // less fee
+      const tokenOut = getTokenOutByTokenIn(
+        pool,
+        poolSwapFee,
+        { denom: previousInDenom, amount: previousInAmount },
+        outDenom,
+      );
+
+      if (!tokenOut.amount.gt(new Int(0))) {
+        // not enough liquidity
+        console.warn('Token out is 0 through pool: ', pool.id);
+        return {
+          ...tokenOut,
+          tokenInFeeAmount: new Int(0),
+          swapFee: poolSwapFee,
+        };
+      }
+
+      beforeSpotPriceInOverOut = beforeSpotPriceInOverOut.mulTruncate(
+        tokenOut.beforeSpotPriceInOverOut,
+      );
+      afterSpotPriceInOverOut = afterSpotPriceInOverOut.mulTruncate(
+        tokenOut.afterSpotPriceInOverOut,
+      );
+      effectivePriceInOverOut = effectivePriceInOverOut.mulTruncate(
+        tokenOut.effectivePriceInOverOut,
+      );
+      swapFee = swapFee.add(new Dec(1).sub(swapFee).mulTruncate(poolSwapFee));
+
+      if (i === path.pools.length - 1) {
+        totalOutAmount = totalOutAmount.add(tokenOut.amount);
+
+        totalBeforeSpotPriceInOverOut = totalBeforeSpotPriceInOverOut.add(
+          beforeSpotPriceInOverOut.mulTruncate(amountFraction),
+        );
+        totalAfterSpotPriceInOverOut = totalAfterSpotPriceInOverOut.add(
+          afterSpotPriceInOverOut.mulTruncate(amountFraction),
+        );
+        totalEffectivePriceInOverOut = totalEffectivePriceInOverOut.add(
+          effectivePriceInOverOut.mulTruncate(amountFraction),
+        );
+        totalSwapFee = totalSwapFee.add(swapFee.mulTruncate(amountFraction));
+      } else {
+        previousInDenom = outDenom;
+        previousInAmount = tokenOut.amount;
+      }
+    }
+  }
+
+  const priceImpact = totalEffectivePriceInOverOut
+    .quo(totalBeforeSpotPriceInOverOut)
+    .sub(new Dec('1'));
+
+  return {
+    amount: totalOutAmount,
+    beforeSpotPriceInOverOut: totalBeforeSpotPriceInOverOut,
+    beforeSpotPriceOutOverIn: new Dec(1).quoTruncate(
+      totalBeforeSpotPriceInOverOut,
+    ),
+    afterSpotPriceInOverOut: totalAfterSpotPriceInOverOut,
+    afterSpotPriceOutOverIn: new Dec(1).quoTruncate(
+      totalAfterSpotPriceInOverOut,
+    ),
+    effectivePriceInOverOut: totalEffectivePriceInOverOut,
+    effectivePriceOutOverIn: new Dec(1).quoTruncate(
+      totalEffectivePriceInOverOut,
+    ),
+    tokenInFeeAmount: sumAmount.sub(
+      new Dec(sumAmount).mulTruncate(new Dec(1).sub(totalSwapFee)).round(),
+    ),
+    swapFee: totalSwapFee,
+    priceImpact,
+  };
 };

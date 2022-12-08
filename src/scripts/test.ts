@@ -2,10 +2,18 @@ import { Currency } from '@keplr-wallet/types';
 
 import { estimateSwap } from '../estimate-swap';
 
-const tokenInCurrency: Currency = {
-  coinDenom: 'OSMO',
-  coinMinimalDenom: 'uosmo',
-  coinDecimals: 6,
+const tokenInCurrency: Record<'OSMO' | 'ATOM', Currency> = {
+  OSMO: {
+    coinDenom: 'OSMO',
+    coinMinimalDenom: 'uosmo',
+    coinDecimals: 6,
+  },
+  ATOM: {
+    coinDenom: 'ATOM',
+    coinMinimalDenom:
+      'ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2',
+    coinDecimals: 6,
+  },
 };
 const tokenOutCurrency: Currency = {
   coinDenom: 'USDC',
@@ -15,8 +23,15 @@ const tokenOutCurrency: Currency = {
 };
 
 const main = async () => {
-  const value = await estimateSwap(tokenInCurrency, tokenOutCurrency, '1');
-  console.group(value);
+  let value = await estimateSwap(
+    tokenInCurrency.OSMO,
+    tokenOutCurrency,
+    '1000000',
+  );
+  console.log('OSMO', value.amount.toString());
+
+  value = await estimateSwap(tokenInCurrency.ATOM, tokenOutCurrency, '1000000');
+  console.log('ATOM', value.amount.toString());
 };
 
 main().catch((e) => {

@@ -63,9 +63,9 @@ Works like magic!
 ```ts
 import { estimateSwap } from '@many-things/osmosis-router';
 
-// 1 OSMO = 0.965247 USDC
-const amount: string = '1';
-estimateSwap(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.965247 USDC)
+// 1 OSMO = 0.899660 USDC
+const amount: string = (1 * 10 ** 6).toString();
+estimateSwap(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.899660 USDC)
 ```
 
 > **Note**<br />

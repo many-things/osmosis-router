@@ -1,9 +1,27 @@
 import { Currency } from '@keplr-wallet/types';
-import { Dec, Int } from '@keplr-wallet/unit';
+import {
+  CoinPretty,
+  Dec,
+  DecUtils,
+  Int,
+  IntPretty,
+  RatePretty,
+} from '@keplr-wallet/unit';
+import { OptimizedRoutes, Pool as OsmosisPool } from '@osmosis-labs/pools';
 
 import { Pool } from './osmosis';
 import { Route } from './types';
-import { CoinPrimitive, getOptimizedRoutePaths } from './utils/pools';
+import {
+  CoinPrimitive,
+  calculateTokenOutByTokenIn,
+  getOptimizedRoutePaths,
+} from './utils/pools';
+
+export const sendCurrency: Currency = {
+  coinDenom: 'OSMO',
+  coinMinimalDenom: 'uosmo',
+  coinDecimals: 6,
+};
 
 export const getOsmosisRoutes = async ({
   tokenInCurrency,
@@ -15,7 +33,7 @@ export const getOsmosisRoutes = async ({
   tokenOutCurrency: Currency;
   amount: string;
   pools: Pool[];
-}): Promise<Route[]> => {
+}) => {
   if (pools === undefined || pools.length === 0) {
     throw 'Pool is undefined';
   }
@@ -25,44 +43,84 @@ export const getOsmosisRoutes = async ({
     amount: tokenInAmount,
   };
 
-  const routes = getOptimizedRoutePaths(amount, tokenOutCurrency, pools);
-  if (routes.length === 0) {
-    throw 'There is no matched pool';
+  const paths = getOptimizedRoutePaths(amount, tokenOutCurrency, pools);
+  const zero = {
+    amount: new CoinPretty(tokenOutCurrency, new Dec(0)).ready(false),
+    beforeSpotPriceWithoutSwapFeeInOverOut: new IntPretty(0).ready(false),
+    beforeSpotPriceWithoutSwapFeeOutOverIn: new IntPretty(0),
+    beforeSpotPriceInOverOut: new IntPretty(0).ready(false),
+    beforeSpotPriceOutOverIn: new IntPretty(0).ready(false),
+    afterSpotPriceInOverOut: new IntPretty(0).ready(false),
+    afterSpotPriceOutOverIn: new IntPretty(0).ready(false),
+    effectivePriceInOverOut: new IntPretty(0).ready(false),
+    effectivePriceOutOverIn: new IntPretty(0).ready(false),
+    tokenInFeeAmount: new CoinPretty(sendCurrency, new Dec(0)).ready(false),
+    swapFee: new RatePretty(0).ready(false),
+    priceImpact: new RatePretty(0).ready(false),
+  };
+
+  if (paths.length === 0) {
+    return zero;
   }
 
-  const { OSMOSIS_CURRENCIES } = await import('./constants');
-  const routePath: Route[] = routes[0].pools.map((pool, index) => {
-    const outTokenMinimalDenom = routes[0].tokenOutDenoms[index];
-    const outTokenCurrency = OSMOSIS_CURRENCIES.find(
-      (item) => item.coinMinimalDenom === outTokenMinimalDenom,
-    );
+  const multiplicationInOverOut = DecUtils.getTenExponentN(
+    tokenOutCurrency.coinDecimals - sendCurrency.coinDecimals,
+  );
+  const result = calculateTokenOutByTokenIn(paths);
 
-    if (!outTokenCurrency) {
-      throw 'no out currency';
-    }
+  if (!result.amount.gt(new Int(0))) {
+    // setError(new Error('Not enough liquidity'));
+    return zero;
+  }
 
-    const [inPoolAsset, outPoolAsset] = pool.pool_assets;
-    return {
-      pool: {
-        inPoolAsset: {
-          coinDecimals: tokenInCurrency.coinDecimals,
-          coinMinimalDenom: tokenInCurrency.coinMinimalDenom,
-          amount: new Int(inPoolAsset.token.amount),
-          weight: new Int(inPoolAsset.weight),
-        },
-        outPoolAsset: {
-          amount: new Int(outPoolAsset.token.amount),
-          weight: new Int(outPoolAsset.weight),
-        },
-        swapFee: new Dec(pool.pool_params.swap_fee),
-      },
-      tokenOutCurrency: {
-        coinDenom: outTokenCurrency.coinDenom,
-        coinMinimalDenom: outTokenCurrency.coinMinimalDenom,
-        coinDecimals: outTokenCurrency.coinDecimals,
-      },
-    };
-  });
+  const beforeSpotPriceWithoutSwapFeeInOverOutDec =
+    result.beforeSpotPriceInOverOut.mulTruncate(new Dec(1).sub(result.swapFee));
 
-  return routePath;
+  return {
+    amount: new CoinPretty(tokenOutCurrency, result.amount).locale(false),
+    beforeSpotPriceWithoutSwapFeeInOverOut: new IntPretty(
+      beforeSpotPriceWithoutSwapFeeInOverOutDec.mulTruncate(
+        multiplicationInOverOut,
+      ),
+    ),
+    beforeSpotPriceWithoutSwapFeeOutOverIn:
+      beforeSpotPriceWithoutSwapFeeInOverOutDec.gt(new Dec(0)) &&
+      multiplicationInOverOut.gt(new Dec(0))
+        ? new IntPretty(
+            new Dec(1)
+              .quoTruncate(beforeSpotPriceWithoutSwapFeeInOverOutDec)
+              .quoTruncate(multiplicationInOverOut),
+          )
+        : new IntPretty(0),
+    beforeSpotPriceInOverOut: new IntPretty(
+      result.beforeSpotPriceInOverOut.mulTruncate(multiplicationInOverOut),
+    ),
+    beforeSpotPriceOutOverIn: multiplicationInOverOut.gt(new Dec(0))
+      ? new IntPretty(
+          result.beforeSpotPriceOutOverIn.quoTruncate(multiplicationInOverOut),
+        )
+      : new IntPretty(0),
+    afterSpotPriceInOverOut: new IntPretty(
+      result.afterSpotPriceInOverOut.mulTruncate(multiplicationInOverOut),
+    ),
+    afterSpotPriceOutOverIn: multiplicationInOverOut.gt(new Dec(0))
+      ? new IntPretty(
+          result.afterSpotPriceOutOverIn.quoTruncate(multiplicationInOverOut),
+        )
+      : new IntPretty(0),
+    effectivePriceInOverOut: new IntPretty(
+      result.effectivePriceInOverOut.mulTruncate(multiplicationInOverOut),
+    ),
+    effectivePriceOutOverIn: multiplicationInOverOut.gt(new Dec(0))
+      ? new IntPretty(
+          result.effectivePriceOutOverIn.quoTruncate(multiplicationInOverOut),
+        )
+      : new IntPretty(0),
+    tokenInFeeAmount: new CoinPretty(
+      sendCurrency,
+      result.tokenInFeeAmount,
+    ).locale(false),
+    swapFee: new RatePretty(result.swapFee),
+    priceImpact: new RatePretty(result.priceImpact),
+  };
 };
