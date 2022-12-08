@@ -11,9 +11,9 @@
   <!-- <a aria-label="NPM bundle size" href="https://github.com/@many-things/osmosis-router/blob/main/LICENSE.md">
     <img alt="" src="https://img.shields.io/bundlephobia/minzip/@many-things/osmosis-router.svg?style=for-the-badge&labelColor=000000">
   </a> -->
-  <!-- <a aria-label="NPM downloads" href="https://github.com/">
+  <a aria-label="NPM downloads" href="https://github.com/">
     <img alt="" src="https://img.shields.io/npm/dt/@many-things/osmosis-router?style=for-the-badge&labelColor=000">
-  </a> -->
+  </a>
   <a aria-label="License" href="https://www.npmjs.com/package/@many-things/osmosis-router">
     <img alt="" src="https://img.shields.io/npm/l/@many-things/osmosis-router.svg?style=for-the-badge&labelColor=000000">
   </a>
