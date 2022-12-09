@@ -16,7 +16,7 @@ import { RoutePath, RoutePathWithAmount } from '../types';
  * @returns
  */
 const hasPoolAsset = (pool: Pool, denom: string): boolean => {
-  const hasPool = pool.pool_assets.find((item) => item.token.denom === denom);
+  const hasPool = pool.pool_assets?.find((item) => item.token.denom === denom);
   return hasPool !== undefined;
 };
 
@@ -83,7 +83,7 @@ const getCandidatePaths = (
       });
     } else {
       if (permitIntermediate && (hasTokenIn || hasTokenOut)) {
-        pool.pool_assets.forEach((poolAsset) => {
+        pool.pool_assets?.forEach((poolAsset) => {
           const { denom } = poolAsset.token;
           if (denom !== tokenInDenom && denom !== tokenOutDenom) {
             if (hasTokenIn) {
@@ -270,7 +270,7 @@ const getPoolAsset = (
   pool: Pool,
   denom: string,
 ): { denom: string; amount: Int; weight: Int } => {
-  const poolAsset = pool.pool_assets.find(
+  const poolAsset = pool.pool_assets?.find(
     (asset) => asset.token.denom === denom,
   );
   if (!poolAsset) {

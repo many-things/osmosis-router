@@ -30,10 +30,12 @@ export interface Pool {
   future_pool_governor: string;
   total_weight: string;
   total_shares: Coin;
-  pool_assets: {
-    weight: string;
-    token: Coin;
-  }[];
+  pool_assets:
+    | {
+        weight: string;
+        token: Coin;
+      }[]
+    | undefined;
 }
 export interface NumPoolsResponse {
   num_pools: string;
