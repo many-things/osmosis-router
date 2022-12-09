@@ -39,14 +39,10 @@ export const getOsmosisRoutes = ({
     return [];
   }
 
-  try {
-    return getOptimizedRoutesByTokenIn(
-      { denom: amount.denom, amount: new Int(amount.amount) },
-      tokenOutCurrency.coinMinimalDenom,
-      5,
-      pools,
-    );
-  } catch (e: any) {
-    return [];
-  }
+  return getOptimizedRoutesByTokenIn(
+    { denom: amount.denom, amount: new Int(amount.amount) },
+    tokenOutCurrency.coinMinimalDenom,
+    5,
+    pools,
+  );
 };
