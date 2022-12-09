@@ -73,9 +73,9 @@ export const getPools = async ({
   return (
     await instance.get('/osmosis/gamm/v1beta1/pools', {
       params: {
-        'pagination.offset': pagination.offset,
-        'pagination.limit': pagination.limit,
-        'pagination.count_total': pagination.count_total,
+        'pagination.offset': pagination?.offset,
+        'pagination.limit': pagination?.limit,
+        'pagination.count_total': pagination?.count_total,
       },
     })
   ).data;
