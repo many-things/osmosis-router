@@ -17,9 +17,8 @@ const tokenInCurrency: Record<'OSMO' | 'ATOM', Currency> = {
   },
 };
 const tokenOutCurrency: Currency = {
-  coinDenom: 'USDC',
-  coinMinimalDenom:
-    'ibc/D189335C6E4A68B513C10AB227BF1C1D38C746766278BA3EEB4FB14124F1D858',
+  coinDenom: 'OSMO',
+  coinMinimalDenom: 'uosmo',
   coinDecimals: 6,
 };
 

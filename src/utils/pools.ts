@@ -1,5 +1,5 @@
 import { Dec, Int } from '@keplr-wallet/unit';
-import * as WeightedPoolMath from '@osmosis-labs/math';
+import { WeightedPoolMath } from '@osmosis-labs/math';
 import { NoPoolsError, NotEnoughLiquidityError } from '@osmosis-labs/pools';
 
 import { Pool } from '../osmosis';
@@ -302,11 +302,11 @@ const getTokenOutByTokenIn = (
     swapFee,
   ).truncate();
 
-  if (tokenOutAmount.equals(new Int(0))) {
+  if (tokenOutAmount.equals(new Int(0) as any)) {
     return new Int(0);
   }
 
-  return tokenOutAmount;
+  return tokenOutAmount as any;
 };
 
 export const calculateTokenOutByTokenIn = (
