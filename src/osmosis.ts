@@ -1,6 +1,4 @@
-import Axios from 'axios';
-
-import { OSMOSIS_CHAIN_REST } from './constants';
+import { AxiosInstance } from 'axios';
 
 export interface Coin {
   denom: string;
@@ -57,17 +55,17 @@ export interface PoolsResponse {
   pagination: PaginationResponse;
 }
 
-const instance = Axios.create({
-  baseURL: OSMOSIS_CHAIN_REST,
-});
-
-export const getNumPools = async (): Promise<NumPoolsResponse> => {
+export const getNumPools = async (
+  instance: AxiosInstance,
+): Promise<NumPoolsResponse> => {
   return (await instance.get('/osmosis/gamm/v1beta1/num_pools')).data;
 };
 
 export const getPools = async ({
+  instance,
   pagination,
 }: {
+  instance: AxiosInstance;
   pagination?: OsmosisPaginationParams;
 }): Promise<PoolsResponse> => {
   return (

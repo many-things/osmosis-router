@@ -81,17 +81,28 @@ estimateSwap(tokenInCurrency, tokenOutCurrency, amount); // CoinPretty (0.899660
 
 ```ts
 import { type Pool } from '@many-things/osmosis-router';
+import Axios, { AxiosInstance } from 'axios';
+
+const defaultInstance = Axios.create({
+  baseURL: OSMOSIS_CHAIN_REST,
+});
 
 export const estimateSwap = async (
   tokenInCurrency: Currency,
   tokenOutCurrency: Currency,
   amount: string,
   pools?: Pool[],
+  instance: AxiosInstance = defaultInstance,
 ): Promise<CoinPretty> => {
   const { getOsmosisPools, getOsmosisRoutes, getOsmosisSwapEstimation } =
     await import('@many-things/osmosis-router');
   if (!pools) {
-    pools = await getOsmosisPools();
+    pools = await getOsmosisPools({
+      instance,
+    }).catch((e) => {
+      console.log(e);
+      return [];
+    });
   }
 
   const routes = getOsmosisRoutes({
