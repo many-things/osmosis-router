@@ -1,4 +1,5 @@
 import { Currency } from '@keplr-wallet/types';
+import Axios from 'axios';
 
 import { estimateSwap } from '../estimate-swap';
 
@@ -22,11 +23,17 @@ const tokenOutCurrency: Currency = {
   coinDecimals: 6,
 };
 
+const instance = Axios.create({
+  baseURL: 'https://osmosis-testnet-rpc.allthatnode.com:1317',
+});
+
 const main = async () => {
   let amount = await estimateSwap(
     tokenInCurrency.OSMO,
     tokenOutCurrency,
     '1000000',
+    undefined,
+    instance,
   );
   console.log('OSMO', amount.toString());
 
@@ -34,6 +41,8 @@ const main = async () => {
     tokenInCurrency.ATOM,
     tokenOutCurrency,
     '1000000',
+    undefined,
+    instance,
   );
   console.log('ATOM', amount.toString());
 };
