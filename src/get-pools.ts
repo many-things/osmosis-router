@@ -13,7 +13,7 @@ export const getOsmosisPools = async ({
 }): Promise<Pool[]> => {
   const { num_pools } = await getNumPools(instance);
   const numberOfPools = parseInt(num_pools);
-  const totalPages = Math.ceil(numberOfPools / 100);
+  const totalPages = Math.ceil(numberOfPools / paginationLimit);
 
   const promises: Promise<Pool[]>[] = new Array(totalPages)
     .fill(0)
