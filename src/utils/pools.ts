@@ -1,6 +1,6 @@
 import { Dec, Int } from '@keplr-wallet/unit';
 import { WeightedPoolMath } from '@osmosis-labs/math';
-import { NoPoolsError, NotEnoughLiquidityError } from '@osmosis-labs/pools';
+import { NoPoolsError } from '@osmosis-labs/pools';
 
 import { Pool } from '../osmosis';
 import { RoutePath, RoutePathWithAmount } from '../types';
@@ -192,6 +192,19 @@ const getCandidatePaths = (
   return filteredRoutePaths;
 };
 
+export class NotEnoughLiquidityError extends Error {
+  constructor(params: {
+    tokenInDenom: string;
+    tokenOutDenom: string;
+    paths: RoutePath[];
+  }) {
+    const message = 'Not enough liquidity';
+    console.debug('', params);
+    super(message);
+    Object.setPrototypeOf(this, NoPoolsError.prototype);
+  }
+}
+
 /**
  * Get Optimized Osmosis Swap path
  * https://github.com/osmosis-labs/osmosis-frontend/blob/2ef79ce0b0c3f7350185f46f347438229ef10a56/packages/pools/src/routes.ts#L215-L270
@@ -248,7 +261,11 @@ export const getOptimizedRoutesByTokenIn = (
 
   // No enough liquidity
   if (totalLimitAmount.lt(tokenIn.amount)) {
-    throw new NotEnoughLiquidityError();
+    throw new NotEnoughLiquidityError({
+      tokenInDenom: tokenIn.denom,
+      tokenOutDenom,
+      paths,
+    });
   }
 
   // TODO: ...
