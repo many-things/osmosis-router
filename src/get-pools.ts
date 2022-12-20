@@ -2,8 +2,10 @@ import { AxiosInstance } from 'axios';
 
 import { Pool, getNumPools, getPools } from './osmosis';
 
+export const DEFAULT_PAGINATION_LIMIT = 1000;
+
 export const getOsmosisPools = async ({
-  paginationLimit = 100,
+  paginationLimit = DEFAULT_PAGINATION_LIMIT,
   instance,
 }: {
   paginationLimit?: number;
