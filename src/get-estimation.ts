@@ -11,7 +11,7 @@ export const sendCurrency: Currency = {
   coinDecimals: 6,
 };
 
-export const getOsmosisSwapEstimation = async ({
+export const getOsmosisSwapEstimation = ({
   tokenInCurrency,
   tokenOutCurrency,
   amount: tokenInAmount,
@@ -23,7 +23,7 @@ export const getOsmosisSwapEstimation = async ({
   amount: string;
   pools: Pool[];
   routes: RoutePathWithAmount[];
-}): Promise<CoinPretty> => {
+}): CoinPretty => {
   if (!pools || pools.length === 0) {
     throw 'Pool is undefined';
   }
