@@ -1,6 +1,6 @@
 {
   "name": "@many-things/osmosis-router",
-  "version": "1.1.9-canary.0",
+  "version": "1.1.9-canary.1",
   "description": "Minimal SDK for Osmosis Swap Estimation",
   "main": "dist/index.js",
   "types": "dist/index.d.js",
