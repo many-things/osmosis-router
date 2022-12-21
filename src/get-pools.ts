@@ -11,9 +11,12 @@ export const getOsmosisPools = async ({
   paginationLimit?: number;
   instance: AxiosInstance;
 }): Promise<Pool[]> => {
-  const { num_pools } = await getNumPools(instance);
-  const numberOfPools = parseInt(num_pools);
-  const totalPages = Math.ceil(numberOfPools / paginationLimit);
+  let totalPages: number = 1;
+  if (paginationLimit !== DEFAULT_PAGINATION_LIMIT) {
+    const { num_pools } = await getNumPools(instance);
+    const numberOfPools = parseInt(num_pools);
+    totalPages = Math.ceil(numberOfPools / paginationLimit);
+  }
 
   const promises: Promise<Pool[]>[] = new Array(totalPages)
     .fill(0)
