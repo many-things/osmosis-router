@@ -231,6 +231,7 @@ export const getOptimizedRoutesByTokenIn = (
   let paths = getCandidatePaths(tokenIn.denom, tokenOutDenom, true, pools);
   // TODO: if paths is single pool - confirm enough liquidity otherwise find different route
   if (paths.length === 0) {
+    console.debug({ paths, tokenIn, tokenOutDenom });
     throw new NoPoolsError();
   }
 
